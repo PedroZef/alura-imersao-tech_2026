@@ -41,7 +41,8 @@ Para que os dados dos usuários e as fotos das figurinhas sejam carregados, o se
 O backend está configurado para servir a página do frontend diretamente. Acesse o endereço abaixo no seu navegador:
 👉 **[http://localhost:8000/](http://localhost:8000/)**
 
-*Nota: Você também pode abrir o arquivo `index.html` diretamente ou servir o diretório frontend separadamente (ex: usando a extensão Live Server ou rodando `npx serve` na pasta frontend), mas rodar pelo endereço do backend é o método recomendado para evitar bloqueios de CORS no navegador.*
+> [!IMPORTANT]
+> Você também pode abrir o arquivo `index.html` diretamente ou servir o diretório frontend separadamente (ex: usando a extensão Live Server ou rodando `npx serve` na pasta frontend), mas rodar pelo endereço do backend é o método recomendado para evitar bloqueios de CORS no navegador.
 
 ### Passo 3: Criar uma Conta ou Logar
 1. No canto superior direito da página, clique no **ícone de Usuário** (silhueta/avatar).
