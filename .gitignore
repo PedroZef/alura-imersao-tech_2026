@@ -1,0 +1,39 @@
+# Ambientes Virtuais do Python
+.venv/
+venv/
+ENV/
+env/
+
+# Cache do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Arquivos do Sistema Operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Configurações de IDEs (VS Code, PyCharm, etc.)
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Arquivos de log e temporários
+*.log
+tmp/
+temp/
+
+# Configurações de ambiente (credenciais e variáveis sensíveis)
+.env
+.env.*
+!.env.example
+
+# Bancos de dados locais (SQLite)
+*.db
+
