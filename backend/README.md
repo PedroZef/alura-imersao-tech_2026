@@ -31,17 +31,17 @@ python -m venv .venv
 Ative o ambiente virtual conforme o seu sistema operacional:
 
 - **No Windows (PowerShell):**
-    ```powershell
-    .venv\Scripts\Activate.ps1
-    ```
+  ```powershell
+  .venv\Scripts\Activate.ps1
+  ```
 - **No Windows (Prompt de Comando - CMD):**
-    ```cmd
-    .venv\Scripts\activate.bat
-    ```
+  ```cmd
+  .venv\Scripts\activate.bat
+  ```
 - **No Linux / macOS:**
-    ```bash
-    source .venv/bin/activate
-    ```
+  ```bash
+  source .venv/bin/activate
+  ```
 
 > [!NOTE]
 > Quando ativado, você verá `(.venv)` no início da linha de comandos do terminal.
@@ -57,13 +57,13 @@ pip install -r requirements.txt
 ### 4. Configurar as Variáveis de Ambiente e Segurança (.env)
 
 1. Crie uma cópia do arquivo de modelo [.env.example](./.env.example) e renomeie-a para `.env`:
-    ```bash
-    copy .env.example .env
-    ```
+   ```bash
+   copy .env.example .env
+   ```
 2. Abra o arquivo `.env` gerado e defina uma chave secreta e aleatória para a assinatura dos tokens JWT na variável `JWT_SECRET_KEY`. Você pode gerar uma chave segura rodando o comando:
-    ```bash
-    python -c "import secrets; print(secrets.token_hex(32))"
-    ```
+   ```bash
+   python -c "import secrets; print(secrets.token_hex(32))"
+   ```
 
 ### 5. Executar o Servidor FastAPI
 
@@ -126,5 +126,5 @@ Para testar as rotas protegidas (como `/auth/me` e `/collect`):
 
 > [!WARNING]
 > O arquivo `.env` que armazena a chave criptográfica **nunca** deve ser enviado ao GitHub. Ele está devidamente listado no arquivo [.gitignore](../.gitignore).
-> 
+>
 > O arquivo do banco de dados SQLite (`album.db`) também é ignorado no Git para evitar subir dados locais ou cadastros de teste dos usuários para a nuvem.

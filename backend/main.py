@@ -1,4 +1,5 @@
 import os
+import glob
 import logging
 from typing import List
 from dotenv import load_dotenv
@@ -93,10 +94,57 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Direretório 'backend'
 ROOT_DIR = os.path.dirname(BASE_DIR)                  # Direretório raiz do projeto
 
+PASTA_BASE = os.path.dirname(os.path.abspath(__file__))
+PASTA_IMAGENS = os.path.join(PASTA_BASE, "imgs")
+
 caminho_imagens = os.path.join(BASE_DIR, "imgs")
 caminho_frontend = os.path.join(ROOT_DIR, "frontend")
 caminho_src = os.path.join(caminho_frontend, "src")
 caminho_index_html = os.path.join(caminho_frontend, "index.html")
+
+# --- LISTA ESTÁTICA DE FIGURINHAS ---
+figurinhas = [
+    {"id": 1, "nome": "Alan Turing", "categoria": "IA", "imagem_url": "/figurinhas/1/imagem", "papel": "Fundamentos da computação e do conceito de IA"},
+    {"id": 2, "nome": "John McCarthy", "categoria": "IA", "imagem_url": "/figurinhas/2/imagem", "papel": "Criou o termo \"Artificial Intelligence\""},
+    {"id": 3, "nome": "Sam Altman", "categoria": "IA", "imagem_url": "/figurinhas/3/imagem", "papel": "Co-fundador e CEO da OpenAI"},
+    {"id": 4, "nome": "Geoffrey Hinton", "categoria": "IA", "imagem_url": "/figurinhas/4/imagem", "papel": "Deep learning e redes neurais modernas"},
+    {"id": 5, "nome": "Yann LeCun", "categoria": "IA", "imagem_url": "/figurinhas/5/imagem", "papel": "Redes convolucionais e visão computacional"},
+    {"id": 6, "nome": "Guido van Rossum", "categoria": "Python", "imagem_url": "/figurinhas/6/imagem", "papel": "Criador da linguagem Python"},
+    {"id": 7, "nome": "Tim Peters", "categoria": "Python", "imagem_url": "/figurinhas/7/imagem", "papel": "Autor do \"Zen of Python\""},
+    {"id": 8, "nome": "Raymond Hettinger", "categoria": "Python", "imagem_url": "/figurinhas/8/imagem", "papel": "Um dos maiores educadores de Python"},
+    {"id": 9, "nome": "Travis Oliphant", "categoria": "Python", "imagem_url": "/figurinhas/9/imagem", "papel": "Criador do NumPy"},
+    {"id": 10, "nome": "Wes McKinney", "categoria": "Python", "imagem_url": "/figurinhas/10/imagem", "papel": "Criador do pandas"},
+    {"id": 11, "nome": "Edgar F. Codd", "categoria": "Banco de Dados", "imagem_url": "/figurinhas/11/imagem", "papel": "Inventor do modelo relacional"},
+    {"id": 12, "nome": "Larry Ellison", "categoria": "Banco de Dados", "imagem_url": "/figurinhas/12/imagem", "papel": "Fundador da Oracle Corporation"},
+    {"id": 13, "nome": "Michael Widenius", "categoria": "Banco de Dados", "imagem_url": "/figurinhas/13/imagem", "papel": "Criador do MySQL"},
+    {"id": 14, "nome": "Salvatore Sanfilippo", "categoria": "Banco de Dados", "imagem_url": "/figurinhas/14/imagem", "papel": "Criador do Redis"},
+    {"id": 15, "nome": "Eliot Horowitz", "categoria": "Banco de Dados", "imagem_url": "/figurinhas/15/imagem", "papel": "Cocriador do MongoDB"},
+    {"id": 16, "nome": "Linus Torvalds", "categoria": "Sist. Operacionais", "imagem_url": "/figurinhas/16/imagem", "papel": "Criador do Linux & Git"},
+    {"id": 17, "nome": "Dennis Ritchie", "categoria": "Sist. Operacionais", "imagem_url": "/figurinhas/17/imagem", "papel": "Co-criador do Unix & C"},
+    {"id": 18, "nome": "Richard Stallman", "categoria": "Sist. Operacionais", "imagem_url": "/figurinhas/18/imagem", "papel": "Projeto GNU / Free Software"},
+    {"id": 19, "nome": "Bill Gates", "categoria": "Sist. Operacionais", "imagem_url": "/figurinhas/19/imagem", "papel": "Co-fundador da Microsoft"},
+    {"id": 20, "nome": "Steve Jobs", "categoria": "Sist. Operacionais", "imagem_url": "/figurinhas/20/imagem", "papel": "Co-fundador da Apple"},
+    {"id": 21, "nome": "Paulo Silveira", "categoria": "Brasil", "imagem_url": "/figurinhas/21/imagem", "papel": "Co-fundador da Alura"},
+    {"id": 22, "nome": "Guilherme Silveira", "categoria": "Brasil", "imagem_url": "/figurinhas/22/imagem", "papel": "Co-fundador da Alura"},
+    {"id": 23, "nome": "Gustavo Guanabara", "categoria": "Brasil", "imagem_url": "/figurinhas/23/imagem", "papel": "Criador do Curso em Vídeo"},
+    {"id": 24, "nome": "Maurício Aniche", "categoria": "Brasil", "imagem_url": "/figurinhas/24/imagem", "papel": "Engenharia de Software / Educador"},
+    {"id": 25, "nome": "Andre David", "categoria": "Brasil", "imagem_url": "/figurinhas/25/imagem", "papel": "Coordenador da FIAP"},
+    {"id": 26, "nome": "Guilherme Lima", "categoria": "Brasil", "imagem_url": "/figurinhas/26/imagem", "papel": "Alura / Tech Educator"},
+    {"id": 27, "nome": "Gi Space Coding", "categoria": "Brasil", "imagem_url": "/figurinhas/27/imagem", "papel": "Giovanna Souza / Creator"},
+    {"id": 28, "nome": "Vinicius Neves", "categoria": "Brasil", "imagem_url": "/figurinhas/28/imagem", "papel": "Desenvolvedor FullStack"},
+    {"id": 29, "nome": "Rafaela Ballerini", "categoria": "Brasil", "imagem_url": "/figurinhas/29/imagem", "papel": "Alura / Tech Educator"},
+    {"id": 30, "nome": "Pedro Zeferino", "categoria": "Brasil", "imagem_url": "/figurinhas/30/imagem", "papel": "Desenvolvedor"},
+    {"id": 31, "nome": "James Gosling", "categoria": "Java", "imagem_url": "/figurinhas/31/imagem", "papel": "Criador da linguagem Java"},
+    {"id": 32, "nome": "Patrick Naughton", "categoria": "Java", "imagem_url": "/figurinhas/32/imagem", "papel": "Cocriador do Java / Green Project"},
+    {"id": 33, "nome": "Mike Sheridan", "categoria": "Java", "imagem_url": "/figurinhas/33/imagem", "papel": "Cocriador do Java / Green Project"},
+    {"id": 34, "nome": "Mark Reinhold", "categoria": "Java", "imagem_url": "/figurinhas/34/imagem", "papel": "Arquiteto-chefe da plataforma Java"},
+    {"id": 35, "nome": "Brian Goetz", "categoria": "Java", "imagem_url": "/figurinhas/35/imagem", "papel": "Arquiteto de linguagem Java na Oracle"},
+    {"id": 36, "nome": "Brendan Eich", "categoria": "JavaScript", "imagem_url": "/figurinhas/36/imagem", "papel": "Criador da linguagem JavaScript"},
+    {"id": 37, "nome": "Douglas Crockford", "categoria": "JavaScript", "imagem_url": "/figurinhas/37/imagem", "papel": "Popularizou o JSON e autor influente"},
+    {"id": 38, "nome": "Ryan Dahl", "categoria": "JavaScript", "imagem_url": "/figurinhas/38/imagem", "papel": "Criador do runtime Node.js"},
+    {"id": 39, "nome": "Anders Hejlsberg", "categoria": "JavaScript", "imagem_url": "/figurinhas/39/imagem", "papel": "Criador do TypeScript e C#"},
+    {"id": 40, "nome": "Jordan Walke", "categoria": "JavaScript", "imagem_url": "/figurinhas/40/imagem", "papel": "Criador da biblioteca React"}
+]
 
 # --- INICIALIZAÇÃO DO FASTAPI ---
 @asynccontextmanager
@@ -117,24 +165,35 @@ app = FastAPI(
 )
 
 # --- CONFIGURAÇÃO DE CORS MIDDLEWARE ---
-# Recupera as origens permitidas do ambiente ou permite todas em desenvolvimento
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # --- MONTAGEM DE ARQUIVOS ESTÁTICOS ---
-# Servir as imagens locais das figurinhas na rota '/figurinhas_img'
-if os.path.exists(caminho_imagens):
-    app.mount("/figurinhas_img", StaticFiles(directory=caminho_imagens), name="figurinhas_img")
-    logger.info(f"Pasta de imagens montada com sucesso em: {caminho_imagens}")
-else:
-    logger.warning(f"⚠️ Diretório de imagens '{caminho_imagens}' não encontrado.")
+# --- ENDPOINT PARA ENTREGAR IMAGENS DAS FIGURINHAS ---
+@app.get("/figurinhas_img/{nome_arquivo}")
+def obter_imagem_figurinha(nome_arquivo: str):
+    """Retorna a imagem de uma figurinha específica por um endpoint próprio."""
+    caminho_arquivo = os.path.join(caminho_imagens, nome_arquivo)
+    arquivos = glob.glob(caminho_arquivo)
+    if not arquivos:
+         raise HTTPException(status_code=404, detail="Imagem não encontrada.")
+    return FileResponse(arquivos[0])
+
+
+@app.get("/figurinhas/{id}/imagem")
+def obter_imagem_figurinha_por_id(id: int):
+    """Retorna a imagem de uma figurinha específica pelo ID buscando na pasta de imagens pelo prefixo de 2 dígitos."""
+    nome_padrao = f"{id:02d}[!0-9]*"
+    caminho_busca = os.path.join(caminho_imagens, nome_padrao)
+    arquivos = glob.glob(caminho_busca)
+    if not arquivos:
+         raise HTTPException(status_code=404, detail="Imagem não encontrada.")
+    return FileResponse(arquivos[0])
 
 # Servir os arquivos estáticos do frontend (CSS, JS, etc.)
 if os.path.exists(caminho_frontend):
@@ -286,20 +345,26 @@ def listar_figurinhas(nome: str = None, categoria: str = None) -> list:
     # Tratamento para evitar que filtros vazios ou a palavra "string" padrão do Swagger filtrem os resultados
     nome_filtro = None
     if nome and nome.strip() and nome.strip().lower() != "string":
-        nome_filtro = nome.strip()
+        nome_filtro = nome.strip().lower()
         
     categoria_filtro = None
     if categoria and categoria.strip() and categoria.strip().lower() != "string":
-        categoria_filtro = categoria.strip()
+        categoria_filtro = categoria.strip().lower()
         
-    return get_all_figurinhas(nome=nome_filtro, categoria=categoria_filtro)
+    res = figurinhas
+    if categoria_filtro:
+        res = [f for f in res if f["categoria"].lower() == categoria_filtro]
+    if nome_filtro:
+        res = [f for f in res if nome_filtro in f["nome"].lower()]
+        
+    return res
 
 
 @app.get("/figurinhas/{id}", response_model=FigurinhaSchema)
 def obter_figurinha(id: int) -> dict:
     """Retorna os detalhes de uma figurinha específica pelo ID único."""
     logger.info(f"Requisição para obter figurinha ID: {id}.")
-    figurinha = get_figurinha_by_id(id)
+    figurinha = next((f for f in figurinhas if f["id"] == id), None)
     if figurinha:
         return figurinha
     logger.warning(f"Figurinha com ID {id} não encontrada.")
