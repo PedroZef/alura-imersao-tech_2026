@@ -3,7 +3,8 @@
 // Detecta dinamicamente a porta: se estivermos rodando no FastAPI (porta 8000),
 // usamos URL relativa. Caso contrário (ex: Live Server), usamos http://localhost:8000.
 // ===================================================
-const API_BASE_URL = "https://alura-imersao-backend.onrender.com"; // (cole o SEU link real aqui, sem a barra / no final)
+const API_BASE_URL = "https://alura-imersao-backend.onrender.com";
+ // (cole o SEU link real aqui, sem a barra / no final)
 
 
 // ===================================================
