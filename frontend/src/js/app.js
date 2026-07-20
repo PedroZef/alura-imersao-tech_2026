@@ -1,11 +1,10 @@
 // ===================================================
 // CONFIGURAÇÃO DA API
-// Detecta dinamicamente a porta: se estivermos rodando no FastAPI (porta 8000),
-// usamos URL relativa. Caso contrário (ex: Live Server), usamos http://localhost:8000.
+// Detecta automaticamente se estamos rodando local (localhost) ou na internet
 // ===================================================
-const API_BASE_URL = "https://alura-imersao-tech-2026.onrender.com/";
- // (cole o SEU link real aqui, sem a barra / no final)
-
+const API_BASE_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+    ? "http://localhost:8000" 
+    : "https://alura-imersao-tech-2026.onrender.com"; // (SEU LINK DO BACKEND AQUI SEM BARRA NO FINAL)
 
 // ===================================================
 // Armazena as figurinhas e a coleção do usuário para acesso global na lógica de clique
