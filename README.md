@@ -93,6 +93,11 @@ O backend serve a API, o banco de dados e hospeda as páginas estáticas.
 Com o backend ativo na porta `8000`, o frontend é servido automaticamente na mesma origem:
 👉 Acesse no navegador: **[http://localhost:8000/](http://localhost:8000/)**
 
+
+## Deploy com Render
+
+- Site https://alura-imersao-tech-2026.onrender.com/
+
 ---
 
 ## 🔮 Possíveis Melhorias e Roadmap do Projeto
@@ -124,4 +129,4 @@ Embora o sistema atual esteja completo, ele foi projetado de forma modular para 
 - **Melhoria:** Reescrever o frontend utilizando Next.js ou React.
 - **Impacto:** Melhora o gerenciamento de estado do álbum (o login, a coleção de coladas, as repetições e o PageFlip funcionariam com controle reativo de estados de forma muito mais simples e robusta).
 
-https://alura-imersao-tech-2026.onrender.com/
+
