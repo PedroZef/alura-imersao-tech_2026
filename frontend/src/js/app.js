@@ -3,19 +3,21 @@
 // Detecta dinamicamente a porta: se estivermos rodando no FastAPI (porta 8000),
 // usamos URL relativa. Caso contrário (ex: Live Server), usamos http://localhost:8000.
 // ===================================================
-const API_BASE_URL = window.location.port === "8000" ? "" : "http://localhost:8000";
+const API_BASE_URL = "https://alura-imersao-backend.onrender.com"; // (cole o SEU link real aqui, sem a barra / no final)
+
 
 // ===================================================
 // Armazena as figurinhas e a coleção do usuário para acesso global na lógica de clique
 let todasFigurinhas = new Map();
 let figurinhasColadas = [];
+let figurinhasReveladas = new Set(JSON.parse(sessionStorage.getItem("figurinhas_reveladas") || "[]"));
 
 // FUNÇÃO: Preenche os slots do álbum com imagens da API
 // Esta função é chamada após o álbum ser inicializado.
 // ===================================================
 async function preencherFigurinhas(pageFlip = null) {
     try {
-        const token = localStorage.getItem("access_token");
+        const token = sessionStorage.getItem("access_token");
         
         // 1. Busca todas as figurinhas disponíveis
         const responseAll = await fetch(`${API_BASE_URL}/figurinhas`);
@@ -48,33 +50,51 @@ async function preencherFigurinhas(pageFlip = null) {
 
             const id = parseInt(slotNumeroEl.textContent.replace("#", ""), 10);
             
-            // Remove qualquer imagem adicionada anteriormente
+            // Remove qualquer imagem ou overlay de revelação adicionados anteriormente
             const imgExistente = slot.querySelector(".sticker-img");
             if (imgExistente) {
                 imgExistente.remove();
             }
+            const overlayExistente = slot.querySelector(".sticker-reveal-overlay");
+            if (overlayExistente) {
+                overlayExistente.remove();
+            }
             slot.classList.remove("slot-preenchido");
+            slot.classList.remove("slot-revelavel");
 
             if (!todasFigurinhas.has(id)) continue;
             const figurinha = todasFigurinhas.get(id);
 
             // Só exibe a imagem se estiver logado AND a figurinha estiver na lista de coladas
             if (token && figurinhasColadas.includes(id)) {
-                const img = document.createElement("img");
-                img.src = `${API_BASE_URL}${figurinha.imagem_url}`;
-                img.alt = figurinha.nome;
-                img.className = "sticker-img";
+                if (figurinhasReveladas.has(id)) {
+                    // Já revelada: exibe a imagem
+                    const img = document.createElement("img");
+                    img.src = `${API_BASE_URL}${figurinha.imagem_url}`;
+                    img.alt = figurinha.nome;
+                    img.className = "sticker-img";
 
-                img.onload = () => {
-                    slot.classList.add("slot-preenchido");
-                    // Se o book já está iniciado, atualiza a view para renderizar a imagem
-                    if (pageFlip) {
-                        pageFlip.update();
-                    }
-                };
-                img.onerror = () => console.warn(`Imagem não encontrada: ${figurinha.nome}`);
+                    img.onload = () => {
+                        slot.classList.add("slot-preenchido");
+                        if (pageFlip) {
+                            pageFlip.update();
+                        }
+                    };
+                    img.onerror = () => console.warn(`Imagem não encontrada: ${figurinha.nome}`);
 
-                slot.insertBefore(img, slot.firstChild);
+                    slot.insertBefore(img, slot.firstChild);
+                } else {
+                    // Coletada mas não revelada: exibe overlay "revelável"
+                    slot.classList.add("slot-revelavel");
+
+                    const overlay = document.createElement("div");
+                    overlay.className = "sticker-reveal-overlay";
+                    overlay.innerHTML = `
+                        <div class="reveal-glow"></div>
+                        <span class="reveal-text">Revelar!</span>
+                    `;
+                    slot.insertBefore(overlay, slot.firstChild);
+                }
             }
         }
 
@@ -453,7 +473,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Helper: Verifica se o token JWT está salvo e é válido
     async function checkLoginStatus() {
-        const token = localStorage.getItem("access_token");
+        const token = sessionStorage.getItem("access_token");
         if (!token) {
             currentUser = null;
             updateAuthUI();
@@ -471,7 +491,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 currentUser = await response.json();
             } else {
                 // Token inválido ou expirado
-                localStorage.removeItem("access_token");
+                sessionStorage.removeItem("access_token");
                 currentUser = null;
             }
         } catch (error) {
@@ -561,7 +581,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error(data.detail || "Erro ao fazer login.");
             }
 
-            localStorage.setItem("access_token", data.access_token);
+            sessionStorage.setItem("access_token", data.access_token);
             await checkLoginStatus();
             closeModal();
             
@@ -622,7 +642,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
                     if (loginResponse.ok) {
                         const loginData = await loginResponse.json();
-                        localStorage.setItem("access_token", loginData.access_token);
+                        sessionStorage.setItem("access_token", loginData.access_token);
                         await checkLoginStatus();
                         closeModal();
                         if (typeof preencherFigurinhas === "function") {
@@ -644,8 +664,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Evento de Logout
     btnLogout.addEventListener("click", () => {
-        localStorage.removeItem("access_token");
+        sessionStorage.removeItem("access_token");
+        sessionStorage.removeItem("figurinhas_reveladas");
         currentUser = null;
+        figurinhasReveladas.clear();
         updateAuthUI();
         closeModal();
         
@@ -666,7 +688,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!slotNumeroEl) return;
 
             const id = parseInt(slotNumeroEl.textContent.replace("#", ""), 10);
-            const token = localStorage.getItem("access_token");
+            const token = sessionStorage.getItem("access_token");
 
             // Se não estiver logado, abre o modal de login
             if (!token) {
@@ -681,8 +703,32 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!todasFigurinhas.has(id)) return;
             const figurinha = todasFigurinhas.get(id);
 
-            // Se já estiver colada, confirma descolamento
-            if (figurinhasColadas.includes(id)) {
+            // Caso 1: Figurinha colada mas ainda não revelada (revela ao clicar)
+            if (figurinhasColadas.includes(id) && !figurinhasReveladas.has(id)) {
+                figurinhasReveladas.add(id);
+                sessionStorage.setItem("figurinhas_reveladas", JSON.stringify(Array.from(figurinhasReveladas)));
+
+                const overlay = slot.querySelector(".sticker-reveal-overlay");
+                if (overlay) overlay.remove();
+                slot.classList.remove("slot-revelavel");
+
+                const img = document.createElement("img");
+                img.src = `${API_BASE_URL}${figurinha.imagem_url}`;
+                img.alt = figurinha.nome;
+                img.className = "sticker-img reveal-animation";
+                img.onload = () => {
+                    slot.classList.add("slot-preenchido");
+                    if (pageFlip) {
+                        pageFlip.update();
+                    }
+                };
+                slot.insertBefore(img, slot.firstChild);
+                console.log(`✨ Figurinha ${id} revelada!`);
+                return;
+            }
+
+            // Caso 2: Figurinha colada e já revelada (confirma descolamento se clicar novamente)
+            if (figurinhasColadas.includes(id) && figurinhasReveladas.has(id)) {
                 const confirmar = confirm(`Deseja descolar a figurinha de ${figurinha.nome}?`);
                 if (confirmar) {
                     try {
@@ -693,6 +739,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (response.ok) {
                             // Atualiza a coleção local
                             figurinhasColadas = figurinhasColadas.filter(item => item !== id);
+                            figurinhasReveladas.delete(id);
+                            sessionStorage.setItem("figurinhas_reveladas", JSON.stringify(Array.from(figurinhasReveladas)));
+
                             // Remove imagem e classe
                             const img = slot.querySelector(".sticker-img");
                             if (img) img.remove();
@@ -712,7 +761,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
             } else {
-                // Se não estiver colada, cola
+                // Caso 3: Não colada (cola e revela imediatamente)
                 try {
                     const response = await fetch(`${API_BASE_URL}/figurinhas/user/me/collect/${id}`, {
                         method: "POST",
@@ -721,14 +770,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (response.ok) {
                         // Atualiza a coleção local
                         figurinhasColadas.push(id);
+                        figurinhasReveladas.add(id);
+                        sessionStorage.setItem("figurinhas_reveladas", JSON.stringify(Array.from(figurinhasReveladas)));
+
                         // Cria e insere a imagem
                         const img = document.createElement("img");
                         img.src = `${API_BASE_URL}${figurinha.imagem_url}`;
                         img.alt = figurinha.nome;
-                        img.className = "sticker-img";
+                        img.className = "sticker-img reveal-animation";
                         img.onload = () => {
                             slot.classList.add("slot-preenchido");
-                            // Atualiza a visualização do PageFlip ao carregar a imagem
                             if (pageFlip) {
                                 pageFlip.update();
                             }

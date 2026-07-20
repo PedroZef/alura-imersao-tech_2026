@@ -29,15 +29,19 @@ Este diretório contém a interface visual interativa do projeto **Alura Album**
 Siga o roteiro abaixo para executar e interagir com o álbum completo na sua máquina:
 
 ### Passo 1: Inicializar o Backend
+
 Para que os dados dos usuários e as fotos das figurinhas sejam carregados, o servidor backend precisa estar ativo na porta `8000`.
+
 1. Acesse o diretório do backend e ative seu ambiente virtual.
 2. Execute o comando:
    ```bash
    uvicorn main:app --reload
    ```
+
 *(O banco de dados SQLite será inicializado automaticamente na primeira execução).*
 
 ### Passo 2: Acessar a Interface do Álbum
+
 O backend está configurado para servir a página do frontend diretamente. Acesse o endereço abaixo no seu navegador:
 👉 **[http://localhost:8000/](http://localhost:8000/)**
 
@@ -45,16 +49,17 @@ O backend está configurado para servir a página do frontend diretamente. Acess
 > Você também pode abrir o arquivo `index.html` diretamente ou servir o diretório frontend separadamente (ex: usando a extensão Live Server ou rodando `npx serve` na pasta frontend), mas rodar pelo endereço do backend é o método recomendado para evitar bloqueios de CORS no navegador.
 
 ### Passo 3: Criar uma Conta ou Logar
-1. No canto superior direito da página, clique no **ícone de Usuário** (silhueta/avatar).
-2. O modal de autenticação com efeito de vidro (glassmorphism) se abrirá.
-3. Você pode se conectar usando o usuário de teste criado automaticamente:
-   * **Usuário:** `test_user_pion`
-   * **Senha:** `test_password`
-4. Ou clique na aba **"Cadastrar"** e crie um novo usuário. Ao clicar em cadastrar, você será autenticado automaticamente.
-5. Após o login, o ícone de usuário exibirá uma **bolinha verde** (indicador de conectado).
 
-### Passo 4: Cole e Gerencie suas Figurinhas
-1. Com o login feito, folheie as páginas do álbum arrastando os cantos da folha ou clicando nas setas de navegação.
-2. Quando passar o cursor sobre um slot vazio, a borda ficará verde brilhante.
-3. **Dê um clique no slot.** A imagem correspondente à personalidade da tecnologia será renderizada imediatamente e salva na sua conta!
-4. **Para remover uma figurinha**, clique em cima da imagem instalada e confirme a remoção na caixa de diálogo.
+No canto superior direito da página, clique no **ícone de Usuário** (silhueta/avatar).
+
+1. O modal de autenticação com efeito de vidro (glassmorphism) se abrirá.
+2. Você pode se conectar usando o usuário de teste criado automaticamente:
+
+   * **Usuário:** `test_user_pion`
+   * **Senha:  test_password**
+3. Ou clique na aba **"Cadastrar"** e crie um novo usuário. Ao clicar em cadastrar, você será autenticado automaticamente.
+4. Após o login, o ícone de usuário exibirá uma **bolinha verde** (indicador de conectadoPasso 4: Cole e Gerencie suas Figurinhas
+5. Com o login feito, folheie as páginas do álbum arrastando os cantos da folha ou clicando nas setas de navegação.
+6. Quando passar o cursor sobre um slot vazio, a borda ficará verde brilhante.
+7. **Dê um clique no slot.** A imagem correspondente à personalidade da tecnologia será renderizada imediatamente e salva na sua conta!
+8. **Para remover uma figurinha**, clique em cima da imagem instalada e confirme a remoção na caixa de diálogo

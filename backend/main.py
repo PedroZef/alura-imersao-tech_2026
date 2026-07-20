@@ -43,6 +43,8 @@ from schemas import (
     UserResponseSchema
 )
 
+
+
 # --- CONFIGURAÇÃO DE SEGURANÇA E JWT ---
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "7b049ad88d9298492026850c9535deabcfad82a93b3f2c5ad2e779a1f2bc837e")
 ALGORITHM = "HS256"
@@ -369,3 +371,10 @@ def obter_figurinha(id: int) -> dict:
         return figurinha
     logger.warning(f"Figurinha com ID {id} não encontrada.")
     raise HTTPException(status_code=404, detail="Figurinha não encontrada.")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+
