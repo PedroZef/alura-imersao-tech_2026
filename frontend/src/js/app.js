@@ -4,7 +4,7 @@
 // ===================================================
 const API_BASE_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
     ? "http://localhost:8000" 
-    : "https://alura-imersao-tech-2026.onrender.com"; // (SEU LINK DO BACKEND AQUI SEM BARRA NO FINAL)
+    : window.location.origin;
 
 // ===================================================
 // Armazena as figurinhas e a coleção do usuário para acesso global na lógica de clique
