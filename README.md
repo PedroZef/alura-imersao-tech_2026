@@ -124,6 +124,6 @@ Embora o sistema atual esteja completo, ele foi projetado de forma modular para 
 - **Melhoria:** Reescrever o frontend utilizando Next.js ou React.
 - **Impacto:** Melhora o gerenciamento de estado do álbum (o login, a coleção de coladas, as repetições e o PageFlip funcionariam com controle reativo de estados de forma muito mais simples e robusta).
 
-## Deploy no Render
+## 🌐 Deploy no Render
 
-- https://alura-imersao-tech-2026.onrender.com/
+- 🔗 [Acesse o Álbum Tech ao vivo no Render](https://alura-imersao-tech-2026.onrender.com/)
