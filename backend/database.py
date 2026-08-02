@@ -28,7 +28,16 @@ DATABASE_URL = os.getenv("DATABASE_URL", "").strip() or f"sqlite:///{DB_PATH}"
 if DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+try:
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+except Exception:
+    raise RuntimeError(
+        "A variável DATABASE_URL está inválida. Ela deve ser uma URL de conexão completa, "
+        "ex.: postgresql://usuario:senha@host:5432/nome_do_banco "
+        "(no Supabase, copie em Connect > Connection string > Pooler, trocando [YOUR-PASSWORD] "
+        "pela senha do banco, sem espaços e sem caracteres especiais como @ ou #, "
+        "ou redefina a senha do banco para letras/números)."
+    ) from None
 
 if DATABASE_URL.startswith("sqlite"):
     @event.listens_for(engine, "connect")
