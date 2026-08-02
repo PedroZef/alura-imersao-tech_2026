@@ -575,10 +575,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: JSON.stringify({ username, password })
             });
 
-            const data = await response.json();
+            const data = await response.json().catch(() => null);
 
             if (!response.ok) {
-                throw new Error(data.detail || "Erro ao fazer login.");
+                throw new Error((data && data.detail) || `Erro ao fazer login (HTTP ${response.status}). Tente novamente em instantes.`);
             }
 
             sessionStorage.setItem("access_token", data.access_token);
@@ -621,10 +621,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: JSON.stringify({ username, password })
             });
 
-            const data = await response.json();
+            const data = await response.json().catch(() => null);
 
             if (!response.ok) {
-                throw new Error(data.detail || "Erro ao cadastrar usuário.");
+                throw new Error((data && data.detail) || `Erro ao cadastrar usuário (HTTP ${response.status}). Tente novamente em instantes.`);
             }
 
             registerSuccess.textContent = "Conta criada com sucesso! Entrando...";
