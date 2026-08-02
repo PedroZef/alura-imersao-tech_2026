@@ -10,9 +10,24 @@ Este diretório contém a API REST do projeto **Alura Album**, construída em Py
 - **FastAPI:** Framework para criação de APIs rápidas e assíncronas.
 - **Uvicorn:** Servidor ASGI de alto desempenho para rodar o app.
 - **PyJWT:** Geração e validação de tokens JWT para segurança.
-- **SQLite3:** Banco de dados relacional em arquivo local (nativo do Python).
+- **SQLAlchemy 2.0:** Camada de acesso a banco portátil (SQLite para desenvolvimento, PostgreSQL para produção).
+- **psycopg (v3):** Driver do PostgreSQL (obrigatório em produção com `DATABASE_URL`).
 
 ---
+
+## ⚙️ Configuração do Banco de Dados
+
+O banco é escolhido pela variável de ambiente `DATABASE_URL`:
+
+| Valor de `DATABASE_URL` | Banco utilizado |
+|---|---|
+| Vazia (padrão) | SQLite local (`backend/album.db`) — criado e semeado automaticamente com as 40 figurinhas |
+| `postgresql://usuario:senha@host:5432/nome` | PostgreSQL (Neon, Supabase, Render Postgres, Docker...) — tabelas e seed também automáticos |
+
+Exemplo com Docker (teste rápido):
+```bash
+docker run -d --name alura-album-db -e POSTGRES_PASSWORD=senha -e POSTGRES_DB=alura_album -p 5432:5432 postgres:16-alpine
+```
 
 ## 🚀 Passo a Passo de Instalação e Execução
 
@@ -56,14 +71,19 @@ pip install -r requirements.txt
 
 ### 4. Configurar as Variáveis de Ambiente e Segurança (.env)
 
-1. Crie uma cópia do arquivo de modelo [.env.example](./.env.example) e renomeie-a para `.env`:
+1. Crie o arquivo `.env` a partir do modelo [.env.example](./.env.example):
    ```bash
-   copy .env.example .env
+   # Windows (PowerShell):  copy .env.example .env
+   # Linux / macOS:         cp .env.example .env
    ```
-2. Abra o arquivo `.env` gerado e defina uma chave secreta e aleatória para a assinatura dos tokens JWT na variável `JWT_SECRET_KEY`. Você pode gerar uma chave segura rodando o comando:
+2. Abra o arquivo `.env` gerado e defina uma chave secreta e aleatória na variável `JWT_SECRET_KEY`. Você pode gerar uma chave segura rodando o comando:
    ```bash
    python -c "import secrets; print(secrets.token_hex(32))"
    ```
+3. (Opcional) Para usar PostgreSQL em vez do SQLite, adicione a linha `DATABASE_URL=postgresql://usuario:senha@host:5432/nome` no `.env`.
+
+> [!IMPORTANT]
+> A variável `JWT_SECRET_KEY` é **obrigatória**: o servidor não inicia sem ela. Isso evita que chaves padrão publicadas acidentalmente no GitHub sejam usadas em produção.
 
 ### 5. Executar o Servidor FastAPI
 
@@ -74,7 +94,10 @@ uvicorn main:app --reload
 ```
 
 - O servidor será iniciado no endereço local: `http://127.0.0.1:8000`
-- O banco de dados SQLite `album.db` será criado e semeado automaticamente com as 40 figurinhas no primeiro início.
+- O banco de dados (SQLite `album.db` ou PostgreSQL) é criado e semeado automaticamente com as 40 figurinhas no primeiro início.
+
+> [!NOTE]
+> Os endpoints `POST /auth/register` e `POST /auth/login` possuem **limite de tentativas por IP** (10 por minuto por padrão, configurável via `RATE_LIMIT_MAX_REQUESTS` e `RATE_LIMIT_WINDOW_SECONDS`) para evitar ataques de força bruta.
 
 ---
 
@@ -128,3 +151,13 @@ Para testar as rotas protegidas (como `/auth/me` e `/collect`):
 > O arquivo `.env` que armazena a chave criptográfica **nunca** deve ser enviado ao GitHub. Ele está devidamente listado no arquivo [.gitignore](../.gitignore).
 >
 > O arquivo do banco de dados SQLite (`album.db`) também é ignorado no Git para evitar subir dados locais ou cadastros de teste dos usuários para a nuvem.
+
+## 🌐 Deploy no Render
+
+1. No painel do Render, conecte o repositório e configure:
+   - **Root Directory:** `backend`
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
+2. Configure as variáveis de ambiente no painel:
+   - `JWT_SECRET_KEY` (obrigatória — gere uma nova chave e nunca reutilize chaves publicadas no GitHub)
+   - `DATABASE_URL` (recomendado — crie um PostgreSQL gratuito no Neon, Supabase ou Render Postgres para os dados persistirem entre deploys)

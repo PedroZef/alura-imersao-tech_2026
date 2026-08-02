@@ -1,5 +1,7 @@
-fastapi>=0.139.0
-uvicorn>=0.51.0
-pydantic>=2.13.4
-python-dotenv>=1.0.1
-pyjwt>=2.13.0
+fastapi==0.141.1
+uvicorn==0.52.1
+pydantic==2.13.4
+python-dotenv==1.2.2
+PyJWT==2.13.0
+SQLAlchemy==2.0.51
+psycopg[binary]==3.3.4
