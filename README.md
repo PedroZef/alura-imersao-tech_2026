@@ -126,4 +126,5 @@ Embora o sistema atual esteja completo, ele foi projetado de forma modular para 
 
 ## 🌐 Deploy no Render
 
-- 🔗 [Acesse o Álbum Tech ao vivo no Render](https://alura-imersao-tech-2026.onrender.com/)
+- 🔗 [Acesse o Álbum Tech ](https://alura-imersao-tech-2026.onrender.com/)[ao vivo no Render](https://alura-imersao-tech-2026-back.onrender.com)
+-
