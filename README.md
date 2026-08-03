@@ -80,31 +80,39 @@ Para rodar a aplicação integrada, siga estes passos simplificados:
 O backend serve a API, o banco de dados e hospeda as páginas estáticas.
 
 1. Navegue até a pasta do backend:
+
    ```bash
    cd backend
    ```
 2. Crie e ative o ambiente virtual:
+
    ```bash
    python -m venv .venv
    # Windows (PowerShell):  .venv\Scripts\Activate.ps1
    # Linux / macOS:         source .venv/bin/activate
    ```
 3. Instale as dependências:
+
    ```bash
    pip install -r requirements.txt
    ```
 4. Crie o arquivo de ambiente com a chave JWT (obrigatória):
+
    ```bash
    # Windows (PowerShell):  copy .env.example .env
    # Linux / macOS:         cp .env.example .env
    ```
+
    Abra o `.env` e preencha `JWT_SECRET_KEY` com uma chave segura:
+
    ```bash
    python -c "import secrets; print(secrets.token_hex(32))"
    ```
-   > ⚠️ Sem a `JWT_SECRET_KEY`, o servidor **não inicia** (proteção contra chaves padrão publicadas no GitHub).
 
+   > ⚠️ Sem a `JWT_SECRET_KEY`, o servidor **não inicia** (proteção contra chaves padrão publicadas no GitHub).
+   >
 5. Inicie o servidor:
+
    ```bash
    uvicorn main:app --reload
    ```
@@ -117,20 +125,20 @@ Com o backend ativo na porta `8000`, o frontend é servido automaticamente na me
 
 ### 💾 Banco de Dados (SQLite ou PostgreSQL)
 
-| Ambiente | Configuração |
-|---|---|
-| **Desenvolvimento (padrão)** | Sem `DATABASE_URL`: usa o SQLite local (`backend/album.db`), criado e semeado automaticamente com as 40 figurinhas. |
-| **Produção (Recomendado)** | Defina `DATABASE_URL` com um PostgreSQL (Neon, Supabase, Render Postgres, etc.): `postgresql://usuario:senha@host:5432/nome_do_banco`. As tabelas e a semeadura acontecem automaticamente no primeiro boot. |
+| Ambiente                            | Configuração                                                                                                                                                                                                 |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Desenvolvimento (padrão)** | Sem`DATABASE_URL`: usa o SQLite local (`backend/album.db`), criado e semeado automaticamente com as 40 figurinhas.                                                                                         |
+| **Produção (Recomendado)**  | Defina`DATABASE_URL` com um PostgreSQL (Neon, Supabase, Render Postgres, etc.): `postgresql://usuario:senha@host:5432/nome_do_banco`. As tabelas e a semeadura acontecem automaticamente no primeiro boot. |
 
 ### 🔐 Variáveis de Ambiente
 
-| Variável | Obrigatória | Descrição |
-|---|---|---|
-| `JWT_SECRET_KEY` | ✅ Sim | Chave de assinatura dos tokens JWT. **Nunca** publique no GitHub. |
-| `DATABASE_URL` | ❌ Não | URL do PostgreSQL. Se vazia, usa SQLite local. |
-| `CORS_ORIGINS` | ❌ Não | Origens permitidas (separadas por vírgula). Padrão: `http://localhost:8000,http://127.0.0.1:8000`. |
-| `RATE_LIMIT_MAX_REQUESTS` | ❌ Não | Máximo de tentativas de login/registro por IP (padrão: `10`). |
-| `RATE_LIMIT_WINDOW_SECONDS` | ❌ Não | Janela de tempo do limite em segundos (padrão: `60`). |
+| Variável                     | Obrigatória | Descrição                                                                                           |
+| ----------------------------- | ------------ | ----------------------------------------------------------------------------------------------------- |
+| `JWT_SECRET_KEY`            | ✅ Sim       | Chave de assinatura dos tokens JWT.**Nunca** publique no GitHub.                                |
+| `DATABASE_URL`              | ❌ Não      | URL do PostgreSQL. Se vazia, usa SQLite local.                                                        |
+| `CORS_ORIGINS`              | ❌ Não      | Origens permitidas (separadas por vírgula). Padrão:`http://localhost:8000,http://127.0.0.1:8000`. |
+| `RATE_LIMIT_MAX_REQUESTS`   | ❌ Não      | Máximo de tentativas de login/registro por IP (padrão:`10`).                                      |
+| `RATE_LIMIT_WINDOW_SECONDS` | ❌ Não      | Janela de tempo do limite em segundos (padrão:`60`).                                               |
 
 ---
 
@@ -166,7 +174,6 @@ Embora o sistema atual esteja completo, ele foi projetado de forma modular para 
 
 ## 🌐 Deploy no Render
 
-- 🔗 [Acesse o Frontend do Álbum Tech ao vivo](https://alura-imersao-tech-2026.onrender.com/)
 - ⚙️ [Acesse a API Backend no Render](https://alura-imersao-tech-2026-back.onrender.com)
 
 ### Configurando o deploy no Render (após as correções de segurança)
