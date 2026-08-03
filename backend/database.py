@@ -1,17 +1,77 @@
 import os
-import sqlite3
 import hashlib
 import logging
+
+from sqlalchemy import (
+    Column,
+    ForeignKey,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    create_engine,
+    event,
+    func,
+    select,
+)
+from sqlalchemy.exc import IntegrityError
 
 logger = logging.getLogger("alura-album-api")
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "album.db")
 
-def get_db_connection():
-    """Retorna uma conexão com o banco de dados SQLite."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+# DATABASE_URL pode apontar para um PostgreSQL (ex.: postgresql://usuario:senha@host:5432/nome)
+# ou ficar vazio para usar o SQLite local (backend/album.db), ideal para desenvolvimento.
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip() or f"sqlite:///{DB_PATH}"
+
+# Garante o uso do driver psycopg 3 (instalado via requirements.txt) com o SQLAlchemy
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
+
+try:
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+except Exception:
+    raise RuntimeError(
+        "A variável DATABASE_URL está inválida. Ela deve ser uma URL de conexão completa, "
+        "ex.: postgresql://usuario:senha@host:5432/nome_do_banco "
+        "(no Supabase, copie em Connect > Connection string > Pooler, trocando [YOUR-PASSWORD] "
+        "pela senha do banco, sem espaços e sem caracteres especiais como @ ou #, "
+        "ou redefina a senha do banco para letras/números)."
+    ) from None
+
+if DATABASE_URL.startswith("sqlite"):
+    @event.listens_for(engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
+metadata = MetaData()
+
+figurinhas = Table(
+    "figurinhas",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("nome", String, nullable=False),
+    Column("categoria", String, nullable=False),
+    Column("imagem_url", String, nullable=False),
+    Column("papel", String, nullable=False),
+)
+
+users = Table(
+    "users",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("username", String, unique=True, nullable=False),
+    Column("password_hash", String, nullable=False),
+)
+
+user_figurinhas = Table(
+    "user_figurinhas",
+    metadata,
+    Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("figurinha_id", ForeignKey("figurinhas.id", ondelete="CASCADE"), primary_key=True),
+)
 
 # List of initial stickers for seeding
 INITIAL_FIGURINHAS = [
@@ -57,56 +117,18 @@ INITIAL_FIGURINHAS = [
     {"id": 40, "nome": "Jordan Walke", "categoria": "JavaScript", "imagem_url": "/figurinhas_img/40-jordan.jpg", "papel": "Criador da biblioteca React"}
 ]
 
+
 def init_db():
-    """Inicializa as tabelas do banco de dados e insere as figurinhas iniciais se necessário."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    """Cria as tabelas (SQLite ou PostgreSQL) e insere as figurinhas iniciais se necessário."""
+    metadata.create_all(engine)
 
-    # Cria tabela de figurinhas
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS figurinhas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL,
-        categoria TEXT NOT NULL,
-        imagem_url TEXT NOT NULL,
-        papel TEXT NOT NULL
-    )
-    """)
+    with engine.begin() as conn:
+        count = conn.execute(select(func.count()).select_from(figurinhas)).scalar_one()
+        if count == 0:
+            logger.info("Semeando banco de dados com as figurinhas iniciais...")
+            conn.execute(figurinhas.insert(), INITIAL_FIGURINHAS)
+            logger.info("Semeadura concluída com sucesso.")
 
-    # Cria tabela de usuários
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL
-    )
-    """)
-
-    # Cria tabela associativa para o álbum do usuário
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS user_figurinhas (
-        user_id INTEGER NOT NULL,
-        figurinha_id INTEGER NOT NULL,
-        PRIMARY KEY (user_id, figurinha_id),
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (figurinha_id) REFERENCES figurinhas(id) ON DELETE CASCADE
-    )
-    """)
-
-    # Semeia as figurinhas se a tabela estiver vazia
-    cursor.execute("SELECT COUNT(*) FROM figurinhas")
-    count = cursor.fetchone()[0]
-    if count == 0:
-        logger.info("Semeando banco de dados com as figurinhas iniciais...")
-        for f in INITIAL_FIGURINHAS:
-            cursor.execute("""
-            INSERT INTO figurinhas (id, nome, categoria, imagem_url, papel)
-            VALUES (?, ?, ?, ?, ?)
-            """, (f["id"], f["nome"], f["categoria"], f["imagem_url"], f["papel"]))
-        conn.commit()
-        logger.info("Semeadura concluída com sucesso.")
-    
-    conn.close()
 
 # --- SEGURANÇA E AUXILIARES DE USUÁRIO ---
 
@@ -115,6 +137,7 @@ def hash_password(password: str) -> str:
     salt = os.urandom(16)
     db_hash = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
     return salt.hex() + ":" + db_hash.hex()
+
 
 def verify_password(password: str, hashed_password: str) -> bool:
     """Verifica se a senha coincide com o hash salvo."""
@@ -127,157 +150,85 @@ def verify_password(password: str, hashed_password: str) -> bool:
     except Exception:
         return False
 
+
 # --- FUNÇÕES DE OPERAÇÕES DE FIGURINHAS (CRUD) ---
 
 def get_all_figurinhas(nome: str = None, categoria: str = None):
     """Retorna uma lista de todas as figurinhas cadastradas no sistema."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    query = "SELECT * FROM figurinhas WHERE 1=1"
-    params = []
-    
+    stmt = select(figurinhas)
+
     if categoria:
-        query += " AND LOWER(categoria) = LOWER(?)"
-        params.append(categoria)
+        stmt = stmt.where(func.lower(figurinhas.c.categoria) == categoria.lower())
     if nome:
-        query += " AND LOWER(nome) LIKE ?"
-        params.append(f"%{nome.lower()}%")
-        
-    cursor.execute(query, params)
-    rows = cursor.fetchall()
-    conn.close()
-    
+        stmt = stmt.where(figurinhas.c.nome.ilike(f"%{nome}%"))
+
+    with engine.connect() as conn:
+        rows = conn.execute(stmt).mappings().all()
     return [dict(row) for row in rows]
+
 
 def get_figurinha_by_id(figurinha_id: int):
     """Obtém os dados de uma figurinha específica pelo ID."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM figurinhas WHERE id = ?", (figurinha_id,))
-    row = cursor.fetchone()
-    conn.close()
+    with engine.connect() as conn:
+        row = conn.execute(
+            select(figurinhas).where(figurinhas.c.id == figurinha_id)
+        ).mappings().first()
     return dict(row) if row else None
 
-def create_figurinha(nome: str, categoria: str, imagem_url: str, papel: str):
-    """Cadastra uma nova figurinha no banco de dados."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-    INSERT INTO figurinhas (nome, categoria, imagem_url, papel)
-    VALUES (?, ?, ?, ?)
-    """, (nome, categoria, imagem_url, papel))
-    new_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-    return get_figurinha_by_id(new_id)
-
-def update_figurinha(figurinha_id: int, nome: str = None, categoria: str = None, imagem_url: str = None, papel: str = None):
-    """Atualiza as informações de uma figurinha existente."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    fields = []
-    params = []
-    
-    if nome is not None:
-        fields.append("nome = ?")
-        params.append(nome)
-    if categoria is not None:
-        fields.append("categoria = ?")
-        params.append(categoria)
-    if imagem_url is not None:
-        fields.append("imagem_url = ?")
-        params.append(imagem_url)
-    if papel is not None:
-        fields.append("papel = ?")
-        params.append(papel)
-        
-    if not fields:
-        conn.close()
-        return get_figurinha_by_id(figurinha_id)
-        
-    query = f"UPDATE figurinhas SET {', '.join(fields)} WHERE id = ?"
-    params.append(figurinha_id)
-    
-    cursor.execute(query, params)
-    conn.commit()
-    conn.close()
-    
-    return get_figurinha_by_id(figurinha_id)
-
-def delete_figurinha(figurinha_id: int) -> bool:
-    """Remove uma figurinha do banco de dados pelo ID."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM figurinhas WHERE id = ?", (figurinha_id,))
-    changes = conn.total_changes
-    conn.commit()
-    conn.close()
-    return changes > 0
 
 # --- OPERAÇÕES DE USUÁRIO E ÁLBUM ---
 
 def create_user(username: str, password_plain: str):
     """Cria um novo usuário com senha hashed no banco de dados."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
     password_hash = hash_password(password_plain)
     try:
-        cursor.execute("""
-        INSERT INTO users (username, password_hash)
-        VALUES (?, ?)
-        """, (username, password_hash))
-        conn.commit()
-        user_id = cursor.lastrowid
-        conn.close()
+        with engine.begin() as conn:
+            result = conn.execute(
+                users.insert().values(username=username, password_hash=password_hash)
+            )
+        user_id = result.inserted_primary_key[0]
         return {"id": user_id, "username": username}
-    except sqlite3.IntegrityError:
-        conn.close()
+    except IntegrityError:
         return None
+
 
 def get_user_by_username(username: str):
     """Busca os dados do usuário pelo username."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
-    row = cursor.fetchone()
-    conn.close()
+    with engine.connect() as conn:
+        row = conn.execute(
+            select(users).where(users.c.username == username)
+        ).mappings().first()
     return dict(row) if row else None
+
 
 def get_user_collected_stickers(user_id: int):
     """Retorna a lista de IDs das figurinhas que o usuário possui coladas."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT figurinha_id FROM user_figurinhas WHERE user_id = ?", (user_id,))
-    rows = cursor.fetchall()
-    conn.close()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            select(user_figurinhas.c.figurinha_id).where(user_figurinhas.c.user_id == user_id)
+        ).mappings().all()
     return [row["figurinha_id"] for row in rows]
+
 
 def collect_sticker(user_id: int, figurinha_id: int) -> bool:
     """Cola/adiciona uma figurinha ao álbum de um usuário."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
     try:
-        cursor.execute("""
-        INSERT INTO user_figurinhas (user_id, figurinha_id)
-        VALUES (?, ?)
-        """, (user_id, figurinha_id))
-        conn.commit()
-        conn.close()
+        with engine.begin() as conn:
+            conn.execute(
+                user_figurinhas.insert().values(user_id=user_id, figurinha_id=figurinha_id)
+            )
         return True
-    except sqlite3.IntegrityError:
-        conn.close()
+    except IntegrityError:
         return False  # Já colada ou figurinha inexistente
+
 
 def uncollect_sticker(user_id: int, figurinha_id: int) -> bool:
     """Descola/remove uma figurinha do álbum de um usuário."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-    DELETE FROM user_figurinhas WHERE user_id = ? AND figurinha_id = ?
-    """, (user_id, figurinha_id))
-    changes = conn.total_changes
-    conn.commit()
-    conn.close()
-    return changes > 0
+    with engine.begin() as conn:
+        result = conn.execute(
+            user_figurinhas.delete().where(
+                user_figurinhas.c.user_id == user_id,
+                user_figurinhas.c.figurinha_id == figurinha_id,
+            )
+        )
+    return result.rowcount > 0
